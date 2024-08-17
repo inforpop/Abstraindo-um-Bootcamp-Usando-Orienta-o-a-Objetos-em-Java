@@ -1,0 +1,284 @@
+Para abstrair um Bootcamp usando orientação a objetos em Java, podemos modelar as principais entidades envolvidas, como `Bootcamp`, `Curso`, `Mentoria`, `Dev`, entre outras. Cada uma dessas entidades terá seus próprios atributos e métodos, refletindo suas responsabilidades dentro do sistema.
+
+### 1. **Modelagem das Classes**
+
+#### 1.1 **Classe `Bootcamp`**
+Representa um programa de treinamento que inclui cursos e mentorias.
+
+```java
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
+
+public class Bootcamp {
+    private String nome;
+    private String descricao;
+    private LocalDate dataInicio;
+    private LocalDate dataFim;
+    private Set<Conteudo> conteudos = new HashSet<>();
+    private Set<Dev> devsInscritos = new HashSet<>();
+
+    public Bootcamp(String nome, String descricao) {
+        this.nome = nome;
+        this.descricao = descricao;
+        this.dataInicio = LocalDate.now();
+        this.dataFim = dataInicio.plusDays(45); // Duração de 45 dias
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public LocalDate getDataInicio() {
+        return dataInicio;
+    }
+
+    public LocalDate getDataFim() {
+        return dataFim;
+    }
+
+    public Set<Conteudo> getConteudos() {
+        return conteudos;
+    }
+
+    public void adicionarConteudo(Conteudo conteudo) {
+        conteudos.add(conteudo);
+    }
+
+    public Set<Dev> getDevsInscritos() {
+        return devsInscritos;
+    }
+
+    public void inscreverDev(Dev dev) {
+        devsInscritos.add(dev);
+        dev.inscreverBootcamp(this);
+    }
+}
+```
+
+#### 1.2 **Classe `Conteudo` (abstrata)**
+Representa o conteúdo educacional no bootcamp, sendo a classe base para `Curso` e `Mentoria`.
+
+```java
+public abstract class Conteudo {
+    protected static final double XP_PADRAO = 10d;
+
+    private String titulo;
+    private String descricao;
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public abstract double calcularXp();
+}
+```
+
+#### 1.3 **Classe `Curso`**
+Representa um curso dentro do bootcamp.
+
+```java
+public class Curso extends Conteudo {
+    private int cargaHoraria;
+
+    public Curso(String titulo, String descricao, int cargaHoraria) {
+        this.setTitulo(titulo);
+        this.setDescricao(descricao);
+        this.cargaHoraria = cargaHoraria;
+    }
+
+    public int getCargaHoraria() {
+        return cargaHoraria;
+    }
+
+    public void setCargaHoraria(int cargaHoraria) {
+        this.cargaHoraria = cargaHoraria;
+    }
+
+    @Override
+    public double calcularXp() {
+        return XP_PADRAO * cargaHoraria;
+    }
+
+    @Override
+    public String toString() {
+        return "Curso: " + getTitulo() + ", Descrição: " + getDescricao() + ", Carga Horária: " + cargaHoraria + "h";
+    }
+}
+```
+
+#### 1.4 **Classe `Mentoria`**
+Representa uma mentoria dentro do bootcamp.
+
+```java
+import java.time.LocalDate;
+
+public class Mentoria extends Conteudo {
+    private LocalDate data;
+
+    public Mentoria(String titulo, String descricao, LocalDate data) {
+        this.setTitulo(titulo);
+        this.setDescricao(descricao);
+        this.data = data;
+    }
+
+    public LocalDate getData() {
+        return data;
+    }
+
+    public void setData(LocalDate data) {
+        this.data = data;
+    }
+
+    @Override
+    public double calcularXp() {
+        return XP_PADRAO + 20d;
+    }
+
+    @Override
+    public String toString() {
+        return "Mentoria: " + getTitulo() + ", Descrição: " + getDescricao() + ", Data: " + data;
+    }
+}
+```
+
+#### 1.5 **Classe `Dev`**
+Representa um desenvolvedor inscrito no bootcamp.
+
+```java
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
+
+public class Dev {
+    private String nome;
+    private Set<Conteudo> conteudosInscritos = new LinkedHashSet<>();
+    private Set<Conteudo> conteudosConcluidos = new LinkedHashSet<>();
+
+    public Dev(String nome) {
+        this.nome = nome;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public Set<Conteudo> getConteudosInscritos() {
+        return conteudosInscritos;
+    }
+
+    public Set<Conteudo> getConteudosConcluidos() {
+        return conteudosConcluidos;
+    }
+
+    public void inscreverBootcamp(Bootcamp bootcamp) {
+        this.conteudosInscritos.addAll(bootcamp.getConteudos());
+    }
+
+    public void progredir() {
+        Optional<Conteudo> conteudo = this.conteudosInscritos.stream().findFirst();
+        if (conteudo.isPresent()) {
+            this.conteudosConcluidos.add(conteudo.get());
+            this.conteudosInscritos.remove(conteudo.get());
+        } else {
+            System.out.println("Você não está matriculado em nenhum conteúdo!");
+        }
+    }
+
+    public double calcularTotalXp() {
+        return this.conteudosConcluidos.stream()
+                .mapToDouble(Conteudo::calcularXp)
+                .sum();
+    }
+
+    @Override
+    public String toString() {
+        return "Dev: " + nome + ", XP Total: " + calcularTotalXp();
+    }
+}
+```
+
+### 2. **Execução do Sistema**
+
+Agora, vamos criar a classe `Main` para simular a inscrição de um desenvolvedor em um bootcamp, e sua progressão através dos conteúdos.
+
+```java
+import java.time.LocalDate;
+
+public class Main {
+    public static void main(String[] args) {
+        // Criando os cursos e mentorias
+        Curso curso1 = new Curso("Java Básico", "Introdução à Programação em Java", 8);
+        Curso curso2 = new Curso("Java Avançado", "Programação Avançada em Java", 12);
+        Mentoria mentoria1 = new Mentoria("Mentoria Java", "Discussão sobre boas práticas em Java", LocalDate.now());
+
+        // Criando um bootcamp
+        Bootcamp bootcamp = new Bootcamp("Bootcamp Java Developer", "Bootcamp focado em Java e suas tecnologias.");
+        bootcamp.adicionarConteudo(curso1);
+        bootcamp.adicionarConteudo(curso2);
+        bootcamp.adicionarConteudo(mentoria1);
+
+        // Criando desenvolvedores
+        Dev dev1 = new Dev("Carlos Silva");
+        Dev dev2 = new Dev("Ana Paula");
+
+        // Inscrevendo desenvolvedores no bootcamp
+        bootcamp.inscreverDev(dev1);
+        bootcamp.inscreverDev(dev2);
+
+        // Simulando a progressão dos desenvolvedores
+        System.out.println("\n--- Progresso do Dev 1 ---");
+        dev1.progredir();
+        dev1.progredir();
+        dev1.progredir();
+
+        System.out.println("\n--- Progresso do Dev 2 ---");
+        dev2.progredir();
+
+        // Exibindo o status dos desenvolvedores
+        System.out.println("\n--- Status dos Desenvolvedores ---");
+        System.out.println(dev1);
+        System.out.println(dev2);
+    }
+}
+```
+
+### 3. **Explicação do Sistema**
+
+1. **Bootcamp**: Representa o programa de treinamento que possui um conjunto de conteúdos (cursos e mentorias) e uma lista de desenvolvedores inscritos.
+
+2. **Conteudo**: Classe abstrata que serve como base para `Curso` e `Mentoria`, com um método abstrato `calcularXp()` para definir a quantidade de XP que cada conteúdo oferece ao ser concluído.
+
+3. **Curso**: Subclasse de `Conteudo` que representa cursos com uma carga horária específica e calcula o XP baseado nessa carga horária.
+
+4. **Mentoria**: Subclasse de `Conteudo` que representa mentorias, calculando um valor fixo de XP ao ser concluída.
+
+5. **Dev**: Representa o desenvolvedor que se inscreve no bootcamp, progride nos conteúdos e acumula XP à medida que conclui cada conteúdo.
+
+6. **Main**: Simula a execução do sistema, criando um bootcamp, adicionando conteúdos, inscrevendo desenvolvedores, e acompanhando o progresso deles.
+
+### 4. **Possíveis Extensões**
+
+- **Adicionar outros tipos de conteúdos** como desafios de código, webinars, etc.
+- **Incluir certificações** ao final do bootcamp, baseadas no XP total acumulado.
+- **Implementar um sistema de ranking** para classificar os desenvolvedores com base no XP.
+- **Gerar relatórios** sobre o progresso dos desenvolvedores e o desempenho do bootcamp.
+- **Adicionar funcionalidades para permitir a criação de novos bootcamps** e a inscrição de vários desenvolvedores simultaneamente.
+
+Este modelo oferece uma base sólida para a construção de um sistema de bootcamp usando orientação a objetos em Java, com possibilidade de expandir e personalizar conforme as necessidades.
